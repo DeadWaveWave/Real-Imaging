@@ -1,0 +1,11 @@
+numpy
+tqdm
+six
+timm
+pandas
+lmdb==1.3.0
+torch==1.12.1
+torchvision==0.13.1
+cn_clip
+gradio
+opencv-python
