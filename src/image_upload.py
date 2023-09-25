@@ -6,13 +6,44 @@ import rarfile
 import py7zr
 import shutil
 import torch
+import codecs
 import numpy as np
 from image_process import *
 from model import *
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-def img_path_process(folder_path):
+def img_info_writer(file_paths):
+    with codecs.open('temp_img_path.csv', 'w', 'utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(['file_name'])
+        for path in file_paths:
+            writer.writerow([path])
+
+    with codecs.open('update_img_path.csv', 'a', 'utf-8') as file:
+        writer = csv.writer(file)
+        for path in file_paths:
+            writer.writerow([path])
+
+    with codecs.open('all_img_path.csv', 'a', 'utf-8') as file:
+        writer = csv.writer(file)
+        for path in file_paths:
+            writer.writerow([path])
+
+def img_path_process_local(folder_path):
+    # 遍历./img/upload 文件夹下附属文件夹内的图片，将图片路径进行收集后写入upload_img_path.csv中
+    file_paths = []
+
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if not file.endswith(('.png', '.jpg', '.jpeg', '.JPG', '.JPEG', '.PNG')):
+                continue
+            file_path = os.path.join(root, file)
+            file_paths.append(file_path)
+
+    img_info_writer(file_paths)
+
+def img_path_process_upload(folder_path):
     # 遍历./img/upload 文件夹下附属文件夹内的图片，将图片路径进行收集后写入upload_img_path.csv中
 
     temp_path = '../data/temp'
@@ -35,28 +66,32 @@ def img_path_process(folder_path):
             # img = preprocess(img).unsqueeze(0).to(device)
             pil_image = Image.fromarray(img)
             # 保存图片到指定路径
-            image_path = os.path.join(folder_path, image_name)
             pil_image.save(image_path)
-            file_paths.append(image_path)
             os.remove(os.path.join(root, image_name))
+            image_path = os.path.join(folder_path, image_name)
+            file_paths.append(image_path)
 
-    with open('temp_img_path.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(['file_name'])
-        for path in file_paths:
-            writer.writerow([path])
+    img_info_writer(file_paths)
 
-    with open('upload_img_path.csv', 'a', newline='') as file:
-        writer = csv.writer(file)
-        for path in file_paths:
-            writer.writerow([path])
 
-    with open('all_img_path.csv', 'a', newline='') as file:
-        writer = csv.writer(file)
-        for path in file_paths:
-            writer.writerow([path])
+def upload_img_folder_path(folder_path):
+    # 调用img_path_process函数处理图片路径，保存到temp_img_path.csv中
+    img_path_process_local(os.path.join(folder_path))
 
-def upload_file(file):
+    # 将图片向量化，添加到img_vectors中
+    df = process_image_data('temp_img_path.csv', model_name) # ViT-B-16, RN50
+    new_img_vectors = torch.tensor(df['vec'].tolist())
+
+    # 将新的图片向量拼接到img_vectors中
+    img_vectors = torch.load(pth)
+    img_vectors = torch.cat((img_vectors, new_img_vectors), 0)
+
+    # 将拼接后的img_vectors保存到pth中
+    torch.save(img_vectors.to(torch.device('cpu')), pth)
+    
+    return "success"
+
+def upload_img_file(file):
     # model_name = "RN50"
     # pth = "img_vectors_output_" + model_name + ".pth"
     # 在这里执行文件保存操作
@@ -95,7 +130,7 @@ def upload_file(file):
         os.remove(zip_path)
 
     # 调用img_path_process函数处理图片路径，保存到temp_img_path.csv中
-    img_path_process(os.path.join("../data", "upload", timestamp))
+    img_path_process_upload(os.path.join("../data", "upload", timestamp))
 
     # 将图片向量化，添加到img_vectors中
     df = process_image_data('temp_img_path.csv', model_name) # ViT-B-16, RN50

@@ -2,7 +2,8 @@ import gradio as gr
 from readme import introduction
 from init import init
 from search import *
-from image_upload import upload_file
+from image_upload import *
+from video_upload import upload_video_path
 
 examples = [
     ["国庆"],
@@ -15,7 +16,6 @@ examples = [
     ["方阵如山，气贯长虹。女兵方队、院校科研方队、预备役部队方队、民兵方队、文职人员方队阔步前行，展现了人民军队威武之师、文明之师、和平之师的良好形象。"],
     ["备受关注的东风-41核导弹方队通过天安门时，不少人流下激动的泪水。作为我国战略核力量的中流砥柱，它以凛然的气势和庞大的体形，在世界面前首次亮相。"]
 ]
-
 
 page_id = 1
 
@@ -40,32 +40,53 @@ with gr.Blocks() as image_search:
     gr.Markdown("述图（Real Imaging）是一款基于Chinese-CLIP构建的高效的文本-图库检索工具应用，为用户提供了便捷的方式来查找与描述性文本相匹配的图片。")
     gr.Markdown("此为述图的demo版本，仅提供了演示使用的部分图库图片。")
     with gr.Row():
-        with gr.Column(scale=2):
+        with gr.Column(scale=1):
             text = gr.Textbox(value="星空中的浪花", label="输入一段图片描述文字，搜索图库中与其最匹配的图片")
             btn = gr.Button("搜索")
-            # with gr.Row():
-                # with gr.Column(scale=1):
-                #     gr.Label(label=str(page_id))
-                # page_id = gr.outputs.Number(label="页数")
-                # with gr.Column(scale=1):
-                # gr.Markdown("当前页数：" + str(page_id))
             pre_page_btn = gr.Button("上一页")
-                # with gr.Column(scale=1):
             next_page_btn = gr.Button("下一页")
             inputs = [text]
             gr.Examples(examples, inputs=inputs)
-        with gr.Column(scale=60):
-            out = gr.Gallery(label="检索结果为：").style(grid=4, height=700)
+        with gr.Column(scale=4):
+            out = gr.Gallery(label="检索结果为：").style(grid=4, height=750)
     btn.click(search_function, inputs=inputs, outputs=out)
     pre_page_btn.click(pre_page, outputs=out)
     next_page_btn.click(next_page, outputs=out)
 
-image_upload = gr.Interface(upload_file,
-                              gr.inputs.File(type="file" ,label="上传图片"),
-                              gr.outputs.Label(),
-                              title="述图（Real Imaging）",
-                              description="上传图片到图库（仅支持单张图片或 zip 压缩包，图片形式目前仅限 .jpg, .jpeg, .png）"
-                              )
+# file_upload = gr.Interface(upload_file,
+#                               gr.inputs.File(type="file" ,label="上传图片"),
+#                               gr.outputs.Label(),
+#                               title="述图（Real Imaging）",
+#                               description="上传图片到图库（仅支持单张图片或 zip 压缩包，图片形式目前仅限 .jpg, .jpeg, .png）"
+#                               )
+
+with gr.Blocks() as file_upload:
+    with gr.Row():
+        with gr.Column(scale = 2):
+            gr.Markdown("# 图片上传")
+            gr.Markdown("## 图片或图片压缩包上传")
+            img_file = gr.File(type="file", label="上传图片或图片压缩包", height=100)
+            upload_img_file_btn = gr.Button("图片文件上传")
+            img_process_resultA = gr.Label()
+            gr.Markdown("## 新增本地图片图库数据")
+            new_picture_folder_name = gr.Textbox(value="D:\\Pictures\\", label="新图所在文件夹路径")
+            update_img_folder_path_btn = gr.Button("更新图库数据") 
+            img_process_resultB = gr.Label()
+        with gr.Column(scale = 2):
+            gr.Markdown("# 视频上传")
+            # video_file = gr.File(type="file", label="上传图片或图片压缩包", height=100)
+            # upload_video_file_btn = gr.Button("视频文件上传")
+            # video_process_resultA = gr.Label()
+            gr.Markdown("## 新增本地视频数据")
+            new_video_path_name = gr.Textbox(value="../videos/", label="新图所在文件夹路径")
+            update_video_path_btn = gr.Button("增加视频数据")
+            img_process_resultB = gr.Label()
+    upload_img_file_btn.click(upload_img_file, inputs=[img_file], outputs=img_process_resultA)
+    inputs_new_picture_folder_path = new_picture_folder_name
+    update_img_folder_path_btn.click(upload_img_folder_path, inputs=inputs_new_picture_folder_path ,outputs=img_process_resultB)
+    # upload_video_file_btn.click(upload_video_file, inputs=[video_file], outputs=video_process_result)
+    inputs_new_video_path = new_video_path_name
+    update_video_path_btn.click(upload_video_path, inputs=inputs_new_video_path ,outputs=img_process_resultB)
 
 with gr.Blocks() as introduce:
     gr.Markdown(introduction)
@@ -79,7 +100,7 @@ with gr.Blocks() as introduce:
 if __name__ == "__main__":
     gr.close_all()
     with gr.TabbedInterface(
-        [image_search, image_upload, introduce],
-        ["图库检索", "图片上传", "应用介绍"],
+        [image_search, file_upload, introduce],
+        ["图库检索", "文件上传", "应用介绍"],
     ) as interface:
         interface.launch(inline=True, share=False)

@@ -113,8 +113,8 @@ def get_video_features(video_path,interval,stand_pro,dis):
         start_list[i] = start_list[i] / fps
     cap.release()
     cv2.destroyAllWindows()
+    print(start_list)
     return start_list
-
 
 if __name__ == "__main__":
     start_list = get_video_features('../videos/秋枝_雨天_孤独_失落.mp4',1,0.85,4)

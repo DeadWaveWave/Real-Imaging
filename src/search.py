@@ -4,7 +4,6 @@ import time
 from text_process import *
 
 index = list()
-df = pd.read_csv('all_img_path.csv')
 
 def search_function(input_text):
     global index
@@ -44,10 +43,11 @@ def search_function(input_text):
 
 
 def imgs_page(page_id):
-    global df
+    global index
     imgs_index_list = index[12*(page_id-1):12*page_id]
     # df = pd.read_csv('all_img_path.csv')
     filepos = list()
+    df = pd.read_csv('all_img_path.csv')
     for j in imgs_index_list:
         filepos.append(df.loc[j].file_name)
 
