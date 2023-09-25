@@ -1,12 +1,12 @@
 
-
+import sys
 import cv2
 import os
 from model import *
 from PIL import Image
 import torch
 import time
-output_folder = '../video_imgs'
+base_folder = '../video_imgs'
 
 def get_vec(frame):
     with torch.no_grad():
@@ -16,7 +16,7 @@ def get_vec(frame):
     return torch.tensor(vec.cpu().detach().numpy())
 
 # 获取场景的特征图片
-def get_scene_features(cap,l,r,fps,video_filename,dis):
+def get_scene_features(cap,l,r,fps,video_filename,dis,output_folder):
     mid = (l + r)/2
     # 如果该场景长度较长，多获取几张图片,设定为取距离中间长度为dis秒的倍数的图片,如当dis为4时，对于10秒的场景，会取5秒中间的图片，再取1秒和9秒的图片
     num = 0
@@ -42,12 +42,13 @@ def get_video_features(video_path,interval,stand_pro,dis):
 
 
     video_filename = os.path.splitext(os.path.basename(video_path))[0]
-    
+    output_folder = os.path.join(base_folder, video_filename)
+
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print("无法打开视频文件")
+        print("无法打开视频，请检查视频路径或视频文件")
         exit()
 
     # 获取视频的帧率
@@ -98,7 +99,7 @@ def get_video_features(video_path,interval,stand_pro,dis):
                 # 获取上一次场景及其末尾之间中间的帧位置，作为该场景的代表图片
                 r = l
                 l = start_list[-2]
-                get_scene_features(cap,l,r,fps,video_filename,dis)
+                get_scene_features(cap,l,r,fps,video_filename,dis,output_folder)
                 
 
         flag_vec = current_vec
@@ -108,7 +109,7 @@ def get_video_features(video_path,interval,stand_pro,dis):
 
     l = start_list[-1]
     r = total_frames
-    get_scene_features(cap,l,r,fps,video_filename,dis)
+    get_scene_features(cap,l,r,fps,video_filename,dis,output_folder)
     for i in range(0,len(start_list)):
         start_list[i] = start_list[i] / fps
     cap.release()
@@ -117,6 +118,13 @@ def get_video_features(video_path,interval,stand_pro,dis):
     return start_list
 
 if __name__ == "__main__":
-    start_list = get_video_features('../videos/秋枝_雨天_孤独_失落.mp4',1,0.85,4)
+    # python video_process.py {video_name}
+    # 如果没有输入视频名称，则退出
+    if(len(sys.argv) < 2):
+        print("执行格式为 python video_process.py $video_path$")
+        print("请输入视频名称")
+        exit()
+    video_path = sys.argv[1]
+    start_list = get_video_features(video_path,1,0.85,4)
     
     

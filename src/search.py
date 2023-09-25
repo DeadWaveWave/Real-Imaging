@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import torch
 import time
@@ -53,3 +54,14 @@ def imgs_page(page_id):
 
     print(filepos)
     return filepos
+
+
+if __name__ == "__main__":
+    # python video_process.py {text}
+    # 如果没有输入文本，则退出
+    if(len(sys.argv) < 2):
+        print("执行格式为 python video_process.py \"text\"")
+        print("请输入文本")
+        exit()
+    text = sys.argv[1]
+    start_list = search_function(text)
