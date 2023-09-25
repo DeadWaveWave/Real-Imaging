@@ -2,8 +2,6 @@
 
 import cv2
 import os
-from datetime import datetime, timedelta
-from text_process import get_sim_probs
 from model import *
 from PIL import Image
 import torch

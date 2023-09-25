@@ -1,3 +1,4 @@
-/data/0*/
-/model/
+/data/
+/model/clip_cn_rn50.pt
 /video_imgs/
+/videos/

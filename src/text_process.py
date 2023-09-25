@@ -35,5 +35,21 @@ def get_sim(image_features, text_features):
 def get_sim_probs(img_vectors, text_vectors):
     with torch.no_grad():
         logits_per_image, logits_per_text = get_sim(img_vectors, text_vectors)
-        probs = logits_per_text.softmax(dim=-1).cpu().numpy()
-    return probs
+        # print(logits_per_text) # tensor([[38.7685, 43.4451, 41.1568,  ..., 49.4177, 46.4309, 48.0733]])
+
+        # 返回logits_per_text中值大于50的排好序的probs和index
+        # 从大到小排序
+        index = logits_per_text[0].argsort(descending=True)
+        # 取出大于50的index
+        index = index[logits_per_text[0][index] > 40]
+        # print(index)
+        # 取出对应的probs
+        probs = logits_per_text[0][index]
+        # 将probs_t转换为numpy
+        probs = probs.cpu().numpy()
+        # print(probs)
+
+        index = index.tolist()
+
+        # probs = logits_per_text.softmax(dim=-1).cpu().numpy()
+    return probs, index

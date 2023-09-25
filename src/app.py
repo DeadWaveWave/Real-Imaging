@@ -1,7 +1,7 @@
 import gradio as gr
 from readme import introduction
 from init import init
-from search import search_function
+from search import *
 from image_upload import upload_file
 
 examples = [
@@ -16,20 +16,49 @@ examples = [
     ["备受关注的东风-41核导弹方队通过天安门时，不少人流下激动的泪水。作为我国战略核力量的中流砥柱，它以凛然的气势和庞大的体形，在世界面前首次亮相。"]
 ]
 
+
+page_id = 1
+
+def pre_page():
+    global page_id
+    if page_id > 1:
+        page_id -= 1
+    filepos = imgs_page(page_id)
+    return filepos
+
+def next_page():
+    global page_id
+    page_id += 1
+    filepos = imgs_page(page_id)
+    if len(filepos) == 0:
+        page_id -= 1
+        filepos = imgs_page(page_id)
+    return filepos
+
 with gr.Blocks() as image_search:
     gr.Markdown("<h1 align='center'> 述图（Real Imaging） </h1>")
     gr.Markdown("述图（Real Imaging）是一款基于Chinese-CLIP构建的高效的文本-图库检索工具应用，为用户提供了便捷的方式来查找与描述性文本相匹配的图片。")
     gr.Markdown("此为述图的demo版本，仅提供了演示使用的部分图库图片。")
     with gr.Row():
-        with gr.Column(scale=1):
-            with gr.Column(scale=2):
-                text = gr.Textbox(value="星空中的浪花", label="输入一段图片描述文字，搜索图库中与其最匹配的图片")
-                btn = gr.Button("搜索")
-                inputs = [text]
-                gr.Examples(examples, inputs=inputs)
-        with gr.Column(scale=100):
-            out = gr.Gallery(label="检索结果为：").style(grid=3, height=700)
+        with gr.Column(scale=2):
+            text = gr.Textbox(value="星空中的浪花", label="输入一段图片描述文字，搜索图库中与其最匹配的图片")
+            btn = gr.Button("搜索")
+            # with gr.Row():
+                # with gr.Column(scale=1):
+                #     gr.Label(label=str(page_id))
+                # page_id = gr.outputs.Number(label="页数")
+                # with gr.Column(scale=1):
+                # gr.Markdown("当前页数：" + str(page_id))
+            pre_page_btn = gr.Button("上一页")
+                # with gr.Column(scale=1):
+            next_page_btn = gr.Button("下一页")
+            inputs = [text]
+            gr.Examples(examples, inputs=inputs)
+        with gr.Column(scale=60):
+            out = gr.Gallery(label="检索结果为：").style(grid=4, height=700)
     btn.click(search_function, inputs=inputs, outputs=out)
+    pre_page_btn.click(pre_page, outputs=out)
+    next_page_btn.click(next_page, outputs=out)
 
 image_upload = gr.Interface(upload_file,
                               gr.inputs.File(type="file" ,label="上传图片"),
@@ -53,4 +82,4 @@ if __name__ == "__main__":
         [image_search, image_upload, introduce],
         ["图库检索", "图片上传", "应用介绍"],
     ) as interface:
-        interface.launch(inline=True, share=True)
+        interface.launch(inline=True, share=False)

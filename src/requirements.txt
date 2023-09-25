@@ -9,3 +9,5 @@ torchvision==0.13.1
 cn_clip
 gradio
 opencv-python
+rarfile
+py7zr

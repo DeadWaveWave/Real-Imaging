@@ -2,10 +2,13 @@ import os
 import csv
 import datetime
 import zipfile
+import rarfile
+import py7zr
 import shutil
 import torch
 import numpy as np
 from image_process import *
+from model import *
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -54,13 +57,13 @@ def img_path_process(folder_path):
             writer.writerow([path])
 
 def upload_file(file):
-    model_name = "RN50"
-    pth = "img_vectors_output_" + model_name + ".pth"
+    # model_name = "RN50"
+    # pth = "img_vectors_output_" + model_name + ".pth"
     # 在这里执行文件保存操作
     filename = os.path.basename(file.name)
     dst_path = os.path.join("../data", "temp", filename)
     shutil.move(file.name, dst_path)
-    print("File saved successfully.")
+    # print("File saved successfully.")
 
     # 读取图片，判断是压缩包还是单张图片
     ## 先创建一个以时间戳命名的文件夹，将图片复制到该文件夹下
@@ -68,7 +71,22 @@ def upload_file(file):
     timestamp = current_time.strftime("%Y%m%d%H%M%S")  # 将时间格式化为字符串
     os.mkdir(os.path.join("../data", "upload", timestamp))
     ## 如果是压缩包，先解压到指定文件夹
-    if filename.endswith('.zip'):
+    # 处理 RAR 格式文件
+    if filename.endswith('.rar'):
+        rar_path = os.path.join("../data", "temp", filename)
+        with rarfile.RarFile(rar_path) as rf:
+            rf.extractall(os.path.join("../data", "temp"))
+        # 删除压缩包
+        os.remove(zip_path)
+    # 处理 7Z 格式文件
+    elif filename.endswith('.7z'):
+        archive_path = os.path.join("../data", "temp", filename)
+        with py7zr.SevenZipFile(archive_path, mode='r') as z:
+            z.extractall(path=os.path.join("../data", "temp"))
+        # 删除压缩包
+        os.remove(zip_path)
+    # 处理 ZIP 格式文件
+    elif filename.endswith('.zip'):
         zip_path = os.path.join("../data", "temp", filename)
         zip_file = zipfile.ZipFile(zip_path)
         zip_file.extractall(os.path.join("../data", "temp"))
