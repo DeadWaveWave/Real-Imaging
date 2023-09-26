@@ -1,14 +1,13 @@
 # 遍历../data文件夹下的图片，将图片路径进行收集后写入all_img_path.csv
 # 预处理../data文件夹下的图片，将图片向量化后写入img_vectors_output.pth
+import sys
 import os
 import csv
 import torch
 from image_process import *
 from model import *
 
-def init():
-    folder_path = '../data'
-
+def init(folder_path = '../data'):
     root_paths = []
     for root, dirs, files in os.walk(folder_path):
         # 在每个文件夹下
@@ -59,4 +58,8 @@ def init():
     return "初始化完成！"
 
 if __name__ == "__main__":
-    init()
+    if len(sys.argv) > 1:
+        folder_path = sys.argv[1]
+        init(folder_path)
+    else:
+        init()

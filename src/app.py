@@ -32,6 +32,17 @@ def login(user_name):
         output_info="当前用户为："+user_name
     return gr.Dropdown.update(choices=img_database_name, value=[], info=output_info, interactive=True)
 
+def login_update(user_name):
+    time.sleep(0.5)
+    global login_status
+    global img_database_name
+    login_status = True
+    if img_database_name == []:
+        output_info="当前用户为："+user_name+"，但该用户没有图库！"
+    else:
+        output_info="当前用户为："+user_name
+    return gr.Dropdown.update(choices=img_database_name, value=[], info=output_info, interactive=True)
+
 def search(text_input, user_name, img_database_selector):
     global login_status
     if login_status == False or len(img_database_selector) == 0:
@@ -57,6 +68,30 @@ def next_page():
         filepos = imgs_page(page_id)
     return filepos
 
+def new_img_database(user_name, new_img_database_name):
+    global login_status
+    global img_database_name
+    if login_status == False:
+        return "请先登录！"
+    res = create_img_database(user_name, new_img_database_name)
+    if res:
+        # 更新图库选项
+        img_database_name = get_img_database_name(user_name)
+        return "新建图库成功！"
+    else:
+        return "图库已存在！"
+
+def upload_img(file, user_name, upload_img_database_name):
+    if user_name is None:
+        return "请先登录！"
+    elif len(upload_img_database_name) == 0:
+        return "请选择图库！"
+    elif file is None:
+        return "请选择图片或图片压缩包！"
+    else:
+        return upload_img_file(file, user_name, upload_img_database_name)
+
+
 with gr.Blocks() as image_search:
     gr.Markdown("<h1 align='center'> 述图（Real Imaging） </h1>")
     gr.Markdown("述图（Real Imaging）是一款致力于成为图片视频检索领域的 Everything 检索工具，为用户提供了便捷的方式来查找与描述性文本相匹配的图片和视频段。")
@@ -67,7 +102,7 @@ with gr.Blocks() as image_search:
             user_name = gr.Textbox(value="wave", label="用户名")
             login_btn = gr.Button("登录")
             # 图库选择（多选）
-            img_database_selector = gr.Dropdown(choices=img_database_name, multiselect=True, every=True ,label="用户图库", info="未登录", interactive=False)
+            img_database_selector = gr.Dropdown(choices=img_database_name, multiselect=True, label="用户图库", info="未登录", interactive=False)
             # 搜索
             text = gr.Textbox(value="星空中的浪花", label="输入一段图片描述文字，搜索图库中与其最匹配的图片")
             search_btn = gr.Button("搜索")
@@ -77,17 +112,27 @@ with gr.Blocks() as image_search:
             gr.Examples(examples, inputs=text_input)
         with gr.Column(scale=4):
             img_searching_result = gr.Gallery(label="检索结果为：").style(grid=4, height=750)
+
     # 登录后更新图库选项
     login_btn.click(login, inputs=user_name, outputs=img_database_selector)
 
     search_btn.click(search, inputs=[text_input, user_name, img_database_selector], outputs=img_searching_result)
+
     pre_page_btn.click(pre_page, outputs=img_searching_result)
     next_page_btn.click(next_page, outputs=img_searching_result)
+
+
 
 with gr.Blocks() as file_upload:
     with gr.Row():
         with gr.Column(scale = 2):
             gr.Markdown("# 图片上传")
+            # 图库选择
+            upload_img_database_selector = gr.Dropdown(choices=img_database_name, label="用户图库", info="未登录", interactive=False)
+            # 新建图库
+            new_img_database_name = gr.Textbox(value="new_img_database", label="新建图库名称")
+            new_img_database_btn = gr.Button("为当前用户新建图库")
+            new_img_database_result = gr.Label()
             gr.Markdown("## 图片或图片压缩包上传")
             img_file = gr.File(type="file", label="上传图片或图片压缩包", height=100)
             upload_img_file_btn = gr.Button("图片文件上传")
@@ -104,13 +149,23 @@ with gr.Blocks() as file_upload:
             gr.Markdown("## 新增本地视频数据")
             new_video_path_name = gr.Textbox(value="../videos/", label="新图所在文件夹路径")
             update_video_path_btn = gr.Button("增加视频数据")
-            img_process_resultB = gr.Label()
-    upload_img_file_btn.click(upload_img_file, inputs=[img_file], outputs=img_process_resultA)
+            video_process_result = gr.Label()
+
+    login_btn.click(login_update, inputs=user_name, outputs=upload_img_database_selector)
+    new_img_database_btn.click(new_img_database, inputs=[user_name, new_img_database_name], outputs=new_img_database_result)
+    new_img_database_btn.click(login_update, inputs=user_name, outputs=upload_img_database_selector)
+    new_img_database_btn.click(login_update, inputs=user_name, outputs=img_database_selector)
+
+    upload_img_file_btn.click(upload_img, inputs=[img_file, user_name, upload_img_database_selector], outputs=img_process_resultA)
+
     inputs_new_picture_folder_path = new_picture_folder_name
-    update_img_folder_path_btn.click(upload_img_folder_path, inputs=inputs_new_picture_folder_path ,outputs=img_process_resultB)
+    update_img_folder_path_btn.click(upload_from_img_folder_path, inputs=[inputs_new_picture_folder_path, user_name, upload_img_database_selector], outputs=img_process_resultB)
+
     # upload_video_file_btn.click(upload_video_file, inputs=[video_file], outputs=video_process_result)
     inputs_new_video_path = new_video_path_name
-    update_video_path_btn.click(upload_video_path, inputs=inputs_new_video_path ,outputs=img_process_resultB)
+    update_video_path_btn.click(upload_video_path, inputs=inputs_new_video_path ,outputs=video_process_result)
+
+
 
 with gr.Blocks() as introduce:
     gr.Markdown(introduction)
