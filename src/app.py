@@ -4,6 +4,7 @@ from init import init
 from search import *
 from image_upload import *
 from video_upload import upload_video_path
+from data_manage import *
 
 examples = [
     ["国庆"],
@@ -16,6 +17,27 @@ examples = [
     ["方阵如山，气贯长虹。女兵方队、院校科研方队、预备役部队方队、民兵方队、文职人员方队阔步前行，展现了人民军队威武之师、文明之师、和平之师的良好形象。"],
     ["备受关注的东风-41核导弹方队通过天安门时，不少人流下激动的泪水。作为我国战略核力量的中流砥柱，它以凛然的气势和庞大的体形，在世界面前首次亮相。"]
 ]
+
+login_status = False
+img_database_name = []
+
+def login(user_name):
+    global login_status
+    global img_database_name
+    login_status = True
+    img_database_name = get_img_database_name(user_name)
+    if img_database_name == []:
+        output_info="当前用户为："+user_name+"，但该用户没有图库！"
+    else:
+        output_info="当前用户为："+user_name
+    return gr.Dropdown.update(choices=img_database_name, value=[], info=output_info, interactive=True)
+
+def search(text_input, user_name, img_database_selector):
+    global login_status
+    if login_status == False or len(img_database_selector) == 0:
+        return []
+    filepos = search_function(text_input, user_name, img_database_selector)
+    return filepos
 
 page_id = 1
 
@@ -37,28 +59,30 @@ def next_page():
 
 with gr.Blocks() as image_search:
     gr.Markdown("<h1 align='center'> 述图（Real Imaging） </h1>")
-    gr.Markdown("述图（Real Imaging）是一款基于Chinese-CLIP构建的高效的文本-图库检索工具应用，为用户提供了便捷的方式来查找与描述性文本相匹配的图片。")
+    gr.Markdown("述图（Real Imaging）是一款致力于成为图片视频检索领域的 Everything 检索工具，为用户提供了便捷的方式来查找与描述性文本相匹配的图片和视频段。")
     gr.Markdown("此为述图的demo版本，仅提供了演示使用的部分图库图片。")
     with gr.Row():
         with gr.Column(scale=1):
+            # 登录
+            user_name = gr.Textbox(value="wave", label="用户名")
+            login_btn = gr.Button("登录")
+            # 图库选择（多选）
+            img_database_selector = gr.Dropdown(choices=img_database_name, multiselect=True, every=True ,label="用户图库", info="未登录", interactive=False)
+            # 搜索
             text = gr.Textbox(value="星空中的浪花", label="输入一段图片描述文字，搜索图库中与其最匹配的图片")
-            btn = gr.Button("搜索")
+            search_btn = gr.Button("搜索")
             pre_page_btn = gr.Button("上一页")
             next_page_btn = gr.Button("下一页")
-            inputs = [text]
-            gr.Examples(examples, inputs=inputs)
+            text_input = text
+            gr.Examples(examples, inputs=text_input)
         with gr.Column(scale=4):
-            out = gr.Gallery(label="检索结果为：").style(grid=4, height=750)
-    btn.click(search_function, inputs=inputs, outputs=out)
-    pre_page_btn.click(pre_page, outputs=out)
-    next_page_btn.click(next_page, outputs=out)
+            img_searching_result = gr.Gallery(label="检索结果为：").style(grid=4, height=750)
+    # 登录后更新图库选项
+    login_btn.click(login, inputs=user_name, outputs=img_database_selector)
 
-# file_upload = gr.Interface(upload_file,
-#                               gr.inputs.File(type="file" ,label="上传图片"),
-#                               gr.outputs.Label(),
-#                               title="述图（Real Imaging）",
-#                               description="上传图片到图库（仅支持单张图片或 zip 压缩包，图片形式目前仅限 .jpg, .jpeg, .png）"
-#                               )
+    search_btn.click(search, inputs=[text_input, user_name, img_database_selector], outputs=img_searching_result)
+    pre_page_btn.click(pre_page, outputs=img_searching_result)
+    next_page_btn.click(next_page, outputs=img_searching_result)
 
 with gr.Blocks() as file_upload:
     with gr.Row():
