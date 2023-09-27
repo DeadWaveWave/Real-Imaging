@@ -3,7 +3,7 @@ from readme import introduction
 from init import init
 from search import *
 from image_upload import *
-from video_upload import upload_video_path
+from video_upload import *
 from data_manage import *
 
 examples = [
@@ -104,7 +104,7 @@ with gr.Blocks() as image_search:
             # 图库选择（多选）
             img_database_selector = gr.Dropdown(choices=img_database_name, multiselect=True, label="用户图库", info="未登录", interactive=False)
             # 搜索
-            text = gr.Textbox(value="星空中的浪花", label="输入一段图片描述文字，搜索图库中与其最匹配的图片")
+            text = gr.Textbox(value="校训树下的述图团队合影", label="输入一段图片描述文字，搜索图库中与其最匹配的图片")
             search_btn = gr.Button("搜索")
             pre_page_btn = gr.Button("上一页")
             next_page_btn = gr.Button("下一页")
@@ -147,9 +147,13 @@ with gr.Blocks() as file_upload:
             # upload_video_file_btn = gr.Button("视频文件上传")
             # video_process_resultA = gr.Label()
             gr.Markdown("## 新增本地视频数据")
-            new_video_path_name = gr.Textbox(value="../videos/", label="新图所在文件夹路径")
+            new_video_path_name = gr.Textbox(value="../videos/test_video.mp4", label="视频所在文件夹路径")
             update_video_path_btn = gr.Button("增加视频数据")
             video_process_result = gr.Label()
+            gr.Markdown('## 搜索视频片段')
+            text2video = gr.Textbox(value="写代码", label="输入一段描述文字，搜索视频中与其最匹配的片段")
+            video_search_btn = gr.Button("搜索")
+            video_result = gr.Video()
 
     login_btn.click(login_update, inputs=user_name, outputs=upload_img_database_selector)
     new_img_database_btn.click(new_img_database, inputs=[user_name, new_img_database_name], outputs=new_img_database_result)
@@ -165,7 +169,7 @@ with gr.Blocks() as file_upload:
     inputs_new_video_path = new_video_path_name
     update_video_path_btn.click(upload_video_path, inputs=inputs_new_video_path ,outputs=video_process_result)
 
-
+    video_search_btn.click(search_video, inputs=text2video, outputs=video_result)
 
 with gr.Blocks() as introduce:
     gr.Markdown(introduction)

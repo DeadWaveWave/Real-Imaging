@@ -6,7 +6,9 @@ from model import *
 from PIL import Image
 import torch
 import time
+from init import init
 base_folder = '../video_imgs'
+video_imgs_folder_path = []
 
 def get_vec(frame):
     with torch.no_grad():
@@ -15,21 +17,53 @@ def get_vec(frame):
     vec /=vec.norm(dim=-1, keepdim=True)
     return torch.tensor(vec.cpu().detach().numpy())
 
+
+def get_videos(cap,start_list,output_folder):
+    output_folder += '_videos'
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    paths = os.listdir(output_folder)
+    for path in paths:
+        os.remove(os.path.join(output_folder, path))
+    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+    # fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    # fourcc = cv2.VideoWriter_fourcc('X','2','6','4')
+    # fourcc = cv2.VideoWriter_fourcc(*'264h')
+    print("编解码器：{}".format(fourcc))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    current_time = 0
+    total_frames = start_list[-1]    # 总帧数
+    index = 1
+    vout = cv2.VideoWriter(os.path.join(output_folder, str(index-1) + '.mp4'), fourcc, fps, size)
+    while current_time <= total_frames:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        if current_time == start_list[index]:
+            print("保存视频段{}.mp4".format(index-1))
+            index += 1
+            vout = cv2.VideoWriter(os.path.join(output_folder, str(index-1) + '.mp4'), fourcc, fps, size)
+        
+        vout.write(frame)
+        current_time += 1
+    init(video_imgs_folder_path[0])
+
 # 获取场景的特征图片
-def get_scene_features(cap,l,r,fps,video_filename,dis,output_folder):
+def get_scene_features(cap,l,r,fps,video_filename,dis,output_folder,index):
     mid = (l + r)/2
     # 如果该场景长度较长，多获取几张图片,设定为取距离中间长度为dis秒的倍数的图片,如当dis为4时，对于10秒的场景，会取5秒中间的图片，再取1秒和9秒的图片
     num = 0
     print(l,r,fps)
     while mid - dis*fps >= l:
         mid -= dis*fps
-        print(mid)
     while mid < r:
         cap.set(cv2.CAP_PROP_POS_FRAMES, mid)
         ret, frame = cap.read()
         if not ret:
             break
-        output_filename = os.path.join(output_folder, f'{video_filename}_{(l/fps)//60:.0f}m{(l/fps)%60}s_{str(num)}.jpg')
+        output_filename = os.path.join(output_folder, f'{video_filename}_{str(index)}_{(l/fps)//60:.0f}m{(l/fps)%60:.1f}s_{str(num)}.jpg')
         cv2.imwrite(output_filename, frame)
         num = num + 1
         mid += dis*fps
@@ -40,10 +74,12 @@ def get_scene_features(cap,l,r,fps,video_filename,dis,output_folder):
 # dis：影响每个场景采取的特征图片数量
 def get_video_features(video_path,interval,stand_pro,dis):
 
-
     video_filename = os.path.splitext(os.path.basename(video_path))[0]
     output_folder = os.path.join(base_folder, video_filename)
 
+    video_imgs_folder_path.append(output_folder)
+    print("output_folder: ", output_folder)
+    print("video_imgs_folder_path: ", video_imgs_folder_path[0])
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     cap = cv2.VideoCapture(video_path)
@@ -59,17 +95,19 @@ def get_video_features(video_path,interval,stand_pro,dis):
     current_time = fps * interval   # 当前采集的帧的位置
     start_list = [0]                # 保存每次转场的起始帧
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))      # 总帧数
+    index = 0
     while current_time <= total_frames:
         # 读取当前帧
-        st = time.time()
+        # st = time.time()
         cap.set(cv2.CAP_PROP_POS_FRAMES, current_time)
-        print(time.time()-st)
+        # print(time.time()-st)
         ret, frame = cap.read()
         if not ret:
             break
 
         # 获取当前图片的矩阵
         current_vec = get_vec(frame)
+
 
         # 计算两个上一次矩阵和当前矩阵的相似度
         pro = torch.nn.functional.cosine_similarity(current_vec, flag_vec, dim=-1)
@@ -99,7 +137,8 @@ def get_video_features(video_path,interval,stand_pro,dis):
                 # 获取上一次场景及其末尾之间中间的帧位置，作为该场景的代表图片
                 r = l
                 l = start_list[-2]
-                get_scene_features(cap,l,r,fps,video_filename,dis,output_folder)
+                get_scene_features(cap,l,r,fps,video_filename,dis,output_folder,index)
+                index += 1
                 
 
         flag_vec = current_vec
@@ -109,7 +148,8 @@ def get_video_features(video_path,interval,stand_pro,dis):
 
     l = start_list[-1]
     r = total_frames
-    get_scene_features(cap,l,r,fps,video_filename,dis,output_folder)
+    get_scene_features(cap,l,r,fps,video_filename,dis,output_folder,index)
+    get_videos(cap,start_list,output_folder)
     for i in range(0,len(start_list)):
         start_list[i] = start_list[i] / fps
     cap.release()

@@ -4,6 +4,7 @@ import torch
 import time
 import os
 from text_process import *
+from video_process import video_imgs_folder_path
 
 index = list()
 
@@ -51,11 +52,40 @@ def search_function(input_text, user_name, img_database_name):
     return filepos
 
 
-def imgs_page(page_id):
+def search_video(input_text):
+    global video_imgs_folder_path,index
+
+    data = {
+        'text': [input_text],
+    }
+    text_df = pd.DataFrame(data)
+
+    # 将文本向量化
+    text_vectors = text_embedding(text_df)
+
+    csv_path = os.path.join(video_imgs_folder_path[0], "img_paths.csv")
+    video_imgs_pth = os.path.join(video_imgs_folder_path[0], "img_vectors_output_" + model_name + ".pth")
+    img_vectors = torch.load(video_imgs_pth)
+
+    probs, index = get_sim_probs(img_vectors, text_vectors)
+
+    filepos = imgs_page(1,csv_path)
+    first = filepos[0]
+    print(first)
+    basename = str(os.path.splitext(os.path.basename(first))[0])
+    print(basename)
+    num = basename.split("_")[2]
+    print(num)
+    video_path = os.path.join(video_imgs_folder_path[0]+'_videos',num+'.mp4')
+    print(video_path)
+    return video_path
+
+
+def imgs_page(page_id, csv_path='all_img_path.csv'):
     global index
     imgs_index_list = index[12*(page_id-1):12*page_id]
     filepos = list()
-    df = pd.read_csv('all_img_path.csv')
+    df = pd.read_csv(csv_path)
     for j in imgs_index_list:
         filepos.append(df.loc[j].file_name)
 
