@@ -30,7 +30,7 @@ def login(user_name):
         output_info="当前用户为："+user_name+"，但该用户没有图库！"
     else:
         output_info="当前用户为："+user_name
-    return gr.Dropdown.update(choices=img_database_name, value=[], info=output_info, interactive=True)
+    return gr.Dropdown(choices=img_database_name, value=[], info=output_info, interactive=True)
 
 def login_update(user_name):
     time.sleep(0.5)
@@ -41,7 +41,7 @@ def login_update(user_name):
         output_info="当前用户为："+user_name+"，但该用户没有图库！"
     else:
         output_info="当前用户为："+user_name
-    return gr.Dropdown.update(choices=img_database_name, value=[], info=output_info, interactive=True)
+    return gr.Dropdown(choices=img_database_name, value=[], info=output_info, interactive=True)
 
 def search(text_input, user_name, img_database_selector):
     global login_status
@@ -111,7 +111,7 @@ with gr.Blocks() as image_search:
             text_input = text
             gr.Examples(examples, inputs=text_input)
         with gr.Column(scale=4):
-            img_searching_result = gr.Gallery(label="检索结果为：").style(grid=4, height=750)
+            img_searching_result = gr.Gallery(label="检索结果为：", columns=[3], height=750) # .style(grid=4, height=750)
 
     # 登录后更新图库选项
     login_btn.click(login, inputs=user_name, outputs=img_database_selector)
@@ -134,7 +134,7 @@ with gr.Blocks() as file_upload:
             new_img_database_btn = gr.Button("为当前用户新建图库")
             new_img_database_result = gr.Label()
             gr.Markdown("## 图片或图片压缩包上传")
-            img_file = gr.File(type="file", label="上传图片或图片压缩包", height=100)
+            img_file = gr.File(type="binary", label="上传图片或图片压缩包", height=100)
             upload_img_file_btn = gr.Button("图片文件上传")
             img_process_resultA = gr.Label()
             gr.Markdown("## 新增本地图片图库数据")
@@ -176,7 +176,7 @@ with gr.Blocks() as introduce:
     gr.Markdown("## 初始化")
     gr.Markdown("首次运行时，需执行 init.py 或点击“初始化”按钮以初始化图库。")
     init_btn = gr.Button("初始化")
-    outputs = gr.outputs.Label()
+    outputs = gr.Label()
     init_btn.click(init, outputs=outputs)
 
 

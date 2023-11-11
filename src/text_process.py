@@ -21,7 +21,9 @@ def embed_text(row):
 
 def text_embedding(df):
     df['vec'] = df.apply(embed_text, axis=1)
-    text_vectors = torch.tensor(df['vec'].tolist())
+    list_vec = df['vec'].tolist()
+    array_vec = np.array(list_vec)
+    text_vectors = torch.tensor(array_vec)
     return text_vectors
 
 def get_sim(image_features, text_features):

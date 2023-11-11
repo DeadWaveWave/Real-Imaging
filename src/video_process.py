@@ -63,7 +63,7 @@ def get_scene_features(cap,l,r,fps,video_filename,dis,output_folder,index):
         ret, frame = cap.read()
         if not ret:
             break
-        output_filename = os.path.join(output_folder, f'{video_filename}_{str(index)}_{(l/fps)//60:.0f}m{(l/fps)%60:.1f}s_{str(num)}.jpg')
+        output_filename = os.path.join(output_folder, f'{video_filename}_f"{index:05d}"_{(l/fps)//60:.0f}m{(l/fps)%60:.1f}s_{str(num)}.jpg')
         cv2.imwrite(output_filename, frame)
         num = num + 1
         mid += dis*fps
@@ -72,7 +72,7 @@ def get_scene_features(cap,l,r,fps,video_filename,dis,output_folder,index):
 # interval:采样的时间间隔1表示1s
 # stand_pro:判断的标准概率，小于该概率视为不同
 # dis：影响每个场景采取的特征图片数量
-def get_video_features(video_path,interval,stand_pro,dis):
+def get_video_features(video_path,interval,stand_pro,dis,is_getting_videos=True):
 
     video_filename = os.path.splitext(os.path.basename(video_path))[0]
     output_folder = os.path.join(base_folder, video_filename)
@@ -149,7 +149,8 @@ def get_video_features(video_path,interval,stand_pro,dis):
     l = start_list[-1]
     r = total_frames
     get_scene_features(cap,l,r,fps,video_filename,dis,output_folder,index)
-    get_videos(cap,start_list,output_folder)
+    if(is_getting_videos == True):
+        get_videos(cap,start_list,output_folder)
     for i in range(0,len(start_list)):
         start_list[i] = start_list[i] / fps
     cap.release()
@@ -165,6 +166,6 @@ if __name__ == "__main__":
         print("请输入视频名称")
         exit()
     video_path = sys.argv[1]
-    start_list = get_video_features(video_path,1,0.85,4)
+    start_list = get_video_features(video_path,1,0.85,100000,False)
     
     

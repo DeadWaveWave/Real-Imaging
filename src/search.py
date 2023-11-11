@@ -48,7 +48,6 @@ def search_function(input_text, user_name, img_database_name):
     # 计算查询时间
     end_time = time.time()
     print("Time cost: ", end_time - start_time, "s")
-    print("init successfully")
     return filepos
 
 
